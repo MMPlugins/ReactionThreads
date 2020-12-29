@@ -12,15 +12,6 @@
 
   "rules": {
     "space-infix-ops": "error",
-    "space-unary-ops": ["error", {
-      "words": true,
-      "nonwords": false,
-      "overrides": {
-        "!": true,
-        "!!": true
-      }
-    }],
-    "quotes": ["error", "double"],
     "no-shadow": "error"
   }
 }
