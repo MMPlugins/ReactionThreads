@@ -1,0 +1,25 @@
+{
+  "name": "reactionthreads",
+  "version": "1.1.0",
+  "description": "A plugin for Discord ModMail by Dragory that allows opening threads via reactions",
+  "main": "./reactionThreads.js",
+  "scripts": {
+    "lint": "eslint --fix ./reactionThreads.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DarkView/ReactionThreads.git"
+  },
+  "keywords": [
+    "modmail",
+    "plugin"
+  ],
+  "author": "DarkView",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/DarkView/ReactionThreads/issues"
+  },
+  "devDependencies": {
+    "eslint": "^7.12.1"
+  }
+}
