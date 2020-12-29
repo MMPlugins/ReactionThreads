@@ -29,20 +29,20 @@ module.exports = function ({ bot, config, commands, threads }) {
   const isValidReaction = function (channelId, messageId, emoji) {
     for (const reaction of reactions) {
       if (reaction.channelId == channelId && reaction.messageId == messageId && reaction.emoji == emoji) {
-        console.log("Same reaction");
-        return true;
+        return reaction;
       }
     }
-    return false;
+    return null;
   }
 
   const addReactionCmd = async (msg, args) => {
     if (msg.author.id !== ownerId) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
-    if (JSON.stringify(reactions).includes(JSON.stringify({ ...args }))) {
+    if (isValidReaction(args.channelId, args.messageId, args.emoji)) {
       msg.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
       return;
     }
+    args.categoryId = args.categoryId ? args.categoryId : null;
 
     try {
       // Replace the trailing > because eris filters out the rest
@@ -62,7 +62,7 @@ module.exports = function ({ bot, config, commands, threads }) {
   const removeReactionCmd = async (msg, args) => {
     if (msg.author.id !== ownerId) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
-    if (!JSON.stringify(reactions).includes(JSON.stringify({ ...args }))) {
+    if (isValidReaction(args.channelId, args.messageId, args.emoji) == null) {
       msg.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesnt exist on that message!`);
       return;
     }
@@ -80,10 +80,32 @@ module.exports = function ({ bot, config, commands, threads }) {
   };
 
   const onReactionAdd = async (message, emoji, reactor) => {
+    if (reactor.user.bot) return;
     const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
-    if (isValidReaction(message.channel.id, message.id, stringifiedEmoji)) {
-      if (await threads.findOpenThreadByUserId(reactor.id)) return;
-      const newThread = await threads.createNewThreadForUser(reactor.user);
+    const reaction = isValidReaction(message.channel.id, message.id, stringifiedEmoji);
+    const userHasThread = await threads.findOpenThreadByUserId(reactor.id);
+    if (reaction != null && userHasThread == null) {
+      const newThread = await threads.createNewThreadForUser(reactor.user, {
+        source: "reaction",
+        categoryId: reaction.categoryId,
+      });
+
+      const responseMessage = Array.isArray(config.responseMessage) ? config.responseMessage.join("\n") : config.responseMessage;
+      const postToThreadChannel = config.showResponseMessageInThreadChannel;
+      await newThread.postSystemMessage(`:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${message.channel.guild.id}/${message.channel.id}/${message.id}`);
+      newThread.sendSystemMessageToUser(responseMessage, { postToThreadChannel });
+
+      try {
+        await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
+      } catch (e) {
+        newThread.postSystemMessage(`⚠️ Failed to remove reaction from message: \`${e}\``);
+      }
+    } else {
+      try {
+        await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
+      } catch (e) {
+        console.error(`[ReactionThreads] Error when trying to remove reaction: ${e}`);
+      }
     }
   };
 
@@ -95,6 +117,7 @@ module.exports = function ({ bot, config, commands, threads }) {
       { name: "channelId", type: "string", required: true },
       { name: "messageId", type: "string", required: true },
       { name: "emoji", type: "string", required: true },
+      { name: "categoryId", type: "string", required: false },
     ],
     addReactionCmd,
   );
