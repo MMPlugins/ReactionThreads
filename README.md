@@ -12,7 +12,7 @@ Table of Contents:
 ## Setup
 Make sure you are running at least v3.2.0 of Modmail.
 in your config.ini file, create a new line and add  
-```ini
+```
 plugins[] = npm:MMPlugins/ReactionThreads
 reactionThreads-ownerId = <yourUserId>
 extraIntents[] = guildMessageReactions
@@ -41,7 +41,7 @@ In case the feature you want to request is outside of the scope of this plugin (
 ## Commands
 
 #### Adding/Registering a reaction
-Signature: `!rtAdd <ChannelID> <MessageID> <Emoji> [CategoryID]`
+Signature: `!rtAdd <ChannelID> <MessageID> <Emoji> [CategoryID]`  
 This will register a new reaction and immediately activate it, making any reactions to it create a new thread.
 - `ChannelID` has to be the ID of the channel the message the reaction should be added to is in.
 - `MessageID` is the ID of the message in that channel.
@@ -49,7 +49,7 @@ This will register a new reaction and immediately activate it, making any reacti
 - `CategoryID` should only be used if you want reactions to that message to be placed in a specific category.
 
 #### Removing/De-Registering a reaction
-Signature: `!rtRemove <ChannelID> <MessageID> <Emoji>`
+Signature: `!rtRemove <ChannelID> <MessageID> <Emoji>`  
 This will de-register an already existing reaction. All threads opened via the reaction remain open.  
 Takes the same arguments as `!rtAdd` but without the `CategoryID`, as that is not needed for reaction matching (cannot have the same emoji twice).
 
