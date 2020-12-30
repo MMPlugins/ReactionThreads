@@ -1,4 +1,5 @@
 ## A plugin for [Dragory's ModMail](https://github.com/dragory/modmailbot) that allows users to open threads with reactions
+Table of Contents:
 - [Setup](#setup)
 - [Usage](#usage)
   - [General](#general)
@@ -48,6 +49,18 @@ This will register a new reaction and immediately activate it, making any reacti
 - `CategoryID` should only be used if you want reactions to that message to be placed in a specific category.
 
 #### Removing/De-Registering a reaction
-SIgnature: `!rtRemove <ChannelID> <MessageID> <Emoji>`
+Signature: `!rtRemove <ChannelID> <MessageID> <Emoji>`
 This will de-register an already existing reaction. All threads opened via the reaction remain open.  
 Takes the same arguments as `!rtAdd` but without the `CategoryID`, as that is not needed for reaction matching (cannot have the same emoji twice).
+
+
+Table of Contents: 
+- [Setup](#setup)
+- [Usage](#usage)
+  - [General](#general)
+  - [Restrictions](#restrictions)
+  - [Bugs](#bugs)
+  - [Feature Requests](#feature-requests)
+- [Commands](#commands)
+    - [Adding/Registering a reaction](#addingregistering-a-reaction)
+    - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)
