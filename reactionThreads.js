@@ -1,31 +1,43 @@
 module.exports = function ({ bot, config, commands, threads }) {
   const fs = require("fs");
+  let reactions = [];
 
-  // Run basic config and data checks
+  // Check if ownerId is specified in the config, warn otherwise
   const ownerId = config["reactionThreads-ownerId"];
   if (typeof ownerId === "undefined") {
     console.info(
-      '[ReactionThreads] No ownerId specified in config via "reactionThreads-ownerId", everyone will be able to add new reactions!',
+      '[ReactionThreads] No ownerId specified in config via "reactionThreads-ownerId", everyone (with inboxServerPermission) will be able to add new reactions!',
     );
   }
+  // Load the suffix for the json file, if one exists (used for multiple bot instances running from the same folder)
+  const jsonSuffix = config["reactionThreads-suffix"] ? config["reactionThreads-suffix"] : "";
 
-  let reactions = [];
-
-  if (!fs.existsSync("./ReactionThreadsData.json")) {
+  // Warn the user not to delete the file in case it doesnt exist (basically a first-use check)
+  if (!fs.existsSync(`./ReactionThreadsData${jsonSuffix}.json`)) {
     console.info(
-      "[ReactionThreads] A ReactionThreadsData.json file will be created when using this plugin. Please do not modify or delete this file or reactions you set up will cease to function.",
+      `[ReactionThreads] A ReactionThreadsData${jsonSuffix}.json file will be created when using this plugin. Please do not modify or delete this file or reactions you set up will cease to function.`,
     );
   } else {
-    // Load reactions if the file exists
-    const data = fs.readFileSync("./ReactionThreadsData.json");
+    // Load registered reactions if the file exists
+    const data = fs.readFileSync(`./ReactionThreadsData${jsonSuffix}.json`);
     reactions = JSON.parse(data);
     console.info(`[ReactionThreads] Successfully loaded ${reactions.length} reaction(s)`);
   }
 
+  /**
+   * Stores all registered reactions into the data file for persistance
+   */
   const saveReactions = function () {
-    fs.writeFileSync("./ReactionThreadsData.json", JSON.stringify(reactions));
+    fs.writeFileSync(`./ReactionThreadsData${jsonSuffix}.json`, JSON.stringify(reactions));
   };
 
+  /**
+   * Checks whether or not passed parameters are a valid reaction
+   * @param {string} channelId The ID of the channel for which to check
+   * @param {string} messageId The ID of the message for which to check
+   * @param {string} emoji The stringified emoji for which to check (i.e. <:test:108552944961454080>)
+   * @returns full reaction if valid, null if not
+   */
   const isValidReaction = function (channelId, messageId, emoji) {
     for (const reaction of reactions) {
       if (reaction.channelId == channelId && reaction.messageId == messageId && reaction.emoji == emoji) {
@@ -33,8 +45,13 @@ module.exports = function ({ bot, config, commands, threads }) {
       }
     }
     return null;
-  }
+  };
 
+  /**
+   * Registers a new reaction for use
+   * @param {Message} msg The message invoking the command
+   * @param {*} args The arguments passed (check registering at bottom)
+   */
   const addReactionCmd = async (msg, args) => {
     if (msg.author.id !== ownerId) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
@@ -59,6 +76,11 @@ module.exports = function ({ bot, config, commands, threads }) {
     msg.channel.createMessage("Succesfully added reaction to message and registered it internally.");
   };
 
+  /**
+   * Unregisters an existing reaction
+   * @param {Message} msg The message invoking the command
+   * @param {*} args The arguments passed (check registering at bottom)
+   */
   const removeReactionCmd = async (msg, args) => {
     if (msg.author.id !== ownerId) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
@@ -79,8 +101,14 @@ module.exports = function ({ bot, config, commands, threads }) {
     msg.channel.createMessage("Succesfully removed reaction from message and de-registered it internally.");
   };
 
+  /**
+   * Handles any reaction added within a guild. If it is a registered reaction, create a thread if none exists
+   * @param {Message} message The message that got reacted to
+   * @param {Emoji} emoji The emoji used to react
+   * @param {Member} reactor The memeber object of the person reacting
+   */
   const onReactionAdd = async (message, emoji, reactor) => {
-    if (reactor.user.bot) return;
+    if (reactor.user.bot || !reactor.guild) return;
     const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
     const reaction = isValidReaction(message.channel.id, message.id, stringifiedEmoji);
     const userHasThread = await threads.findOpenThreadByUserId(reactor.id);
@@ -90,9 +118,13 @@ module.exports = function ({ bot, config, commands, threads }) {
         categoryId: reaction.categoryId,
       });
 
-      const responseMessage = Array.isArray(config.responseMessage) ? config.responseMessage.join("\n") : config.responseMessage;
+      const responseMessage = Array.isArray(config.responseMessage)
+        ? config.responseMessage.join("\n")
+        : config.responseMessage;
       const postToThreadChannel = config.showResponseMessageInThreadChannel;
-      await newThread.postSystemMessage(`:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${message.channel.guild.id}/${message.channel.id}/${message.id}`);
+      await newThread.postSystemMessage(
+        `:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${message.channel.guild.id}/${message.channel.id}/${message.id}`,
+      );
       newThread.sendSystemMessageToUser(responseMessage, { postToThreadChannel });
 
       try {
@@ -100,7 +132,8 @@ module.exports = function ({ bot, config, commands, threads }) {
       } catch (e) {
         newThread.postSystemMessage(`⚠️ Failed to remove reaction from message: \`${e}\``);
       }
-    } else {
+    } else if (reaction != null) {
+      // Only remove reaction if the user has an existing thread
       try {
         await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
       } catch (e) {
