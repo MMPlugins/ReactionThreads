@@ -41,18 +41,21 @@ If you want to request or suggest a feature, open an issue on the [plugins issue
 In case the feature you want to request is outside of the scope of this plugin (anything not to do with reactions creating threads) please use the `#plugin-requests` channel on the [official support discord](https://discord.gg/vRuhG9R).
 ## Commands
 
-#### Adding/Registering a reaction
-Signature: `!rtAdd <ChannelID> <MessageID> <Emoji> [CategoryID]`  
+Parameters in <> are required, parameters in [] optional.
+### Adding/Registering a reaction
+Signature 1: `!rtAdd <ChannelID> <MessageID> <Emoji> [CategoryID]`  
+Signature 2: `!rtAdd <ChannelID> <MessageID> <Emoji> <CategoryID> [PingRoleID]`  
 This will register a new reaction and immediately activate it, making any reactions to it create a new thread.
 - `ChannelID` has to be the ID of the channel the message the reaction should be added to is in.
 - `MessageID` is the ID of the message in that channel.
 - `Emoji` is just the emoji directly from the emoji picker without any changes.
 - `CategoryID` should only be used if you want reactions to that message to be placed in a specific category.
+- `PingRoleID` can only be used in conjunction with `CategoryID`. It allows you to set a role to be pinged when a thread is created with that specific reaction.
 
-#### Removing/De-Registering a reaction
+### Removing/De-Registering a reaction
 Signature: `!rtRemove <ChannelID> <MessageID> <Emoji>`  
 This will de-register an already existing reaction. All threads opened via the reaction remain open.  
-Takes the same arguments as `!rtAdd` but without the `CategoryID`, as that is not needed for reaction matching (cannot have the same emoji twice).
+Takes the same arguments as `!rtAdd` but without the optional parameters, as that is not needed for reaction matching (cannot have the same emoji twice).
 
 
 Table of Contents: 

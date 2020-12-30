@@ -118,12 +118,16 @@ module.exports = function ({ bot, config, commands, threads }) {
         categoryId: reaction.categoryId,
       });
 
+      const toPing = reaction.pingRoleId != null ? reaction.pingRoleId : null;
       const responseMessage = Array.isArray(config.responseMessage)
         ? config.responseMessage.join("\n")
         : config.responseMessage;
       const postToThreadChannel = config.showResponseMessageInThreadChannel;
       await newThread.postSystemMessage(
-        `:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${message.channel.guild.id}/${message.channel.id}/${message.id}`,
+        `:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${
+          message.channel.guild.id
+        }/${message.channel.id}/${message.id}${toPing != null ? " <@&" + toPing + ">" : ""}`,
+        { allowedMentions: { roles: [toPing] } },
       );
       newThread.sendSystemMessageToUser(responseMessage, { postToThreadChannel });
 
@@ -151,6 +155,18 @@ module.exports = function ({ bot, config, commands, threads }) {
       { name: "messageId", type: "string", required: true },
       { name: "emoji", type: "string", required: true },
       { name: "categoryId", type: "string", required: false },
+    ],
+    addReactionCmd,
+  );
+
+  commands.addInboxServerCommand(
+    "rtAdd",
+    [
+      { name: "channelId", type: "string", required: true },
+      { name: "messageId", type: "string", required: true },
+      { name: "emoji", type: "string", required: true },
+      { name: "categoryId", type: "string", required: true },
+      { name: "pingRoleId", type: "string", required: false },
     ],
     addReactionCmd,
   );
