@@ -1,5 +1,7 @@
 module.exports = function ({ bot, config, commands, threads }) {
   const fs = require("fs");
+  const pluginVersion = "1.1";
+  const changelogUrl = "=> https://daark.de/RTCL <="
   let reactions = [];
 
   // Check if ownerId is specified in the config, warn otherwise
@@ -21,11 +23,11 @@ module.exports = function ({ bot, config, commands, threads }) {
     // Load registered reactions if the file exists
     const data = fs.readFileSync(`./ReactionThreadsData${jsonSuffix}.json`);
     reactions = JSON.parse(data);
-    console.info(`[ReactionThreads] Successfully loaded ${reactions.length} reaction(s)`);
+    console.info(`[ReactionThreads] Successfully loaded ${reactions.length - 1} reaction(s)`);
   }
 
   /**
-   * Stores all registered reactions into the data file for persistance
+   * Stores all registered reactions into the data file for persistence
    */
   const saveReactions = function () {
     fs.writeFileSync(`./ReactionThreadsData${jsonSuffix}.json`, JSON.stringify(reactions));
@@ -47,13 +49,18 @@ module.exports = function ({ bot, config, commands, threads }) {
     return null;
   };
 
+  const isOwner = function (message) {
+    if (typeof ownerId === "undefined") return true;
+    return message.member.id === ownerId ? true : message.member.roles.includes(ownerId);
+  }
+
   /**
    * Registers a new reaction for use
    * @param {Message} msg The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
   const addReactionCmd = async (msg, args) => {
-    if (msg.author.id !== ownerId) return;
+    if (!isOwner(msg)) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
     if (isValidReaction(args.channelId, args.messageId, args.emoji)) {
       msg.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
@@ -82,7 +89,7 @@ module.exports = function ({ bot, config, commands, threads }) {
    * @param {*} args The arguments passed (check registering at bottom)
    */
   const removeReactionCmd = async (msg, args) => {
-    if (msg.author.id !== ownerId) return;
+    if (!isOwner(msg)) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
     if (isValidReaction(args.channelId, args.messageId, args.emoji) == null) {
       msg.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesnt exist on that message!`);
@@ -145,6 +152,27 @@ module.exports = function ({ bot, config, commands, threads }) {
       }
     }
   };
+
+
+  //#region versioncheck
+  // Check the plugin version and notify of any updates that happened
+  let foundVersion = null;
+  for (const reaction of reactions) {
+    if (reaction.channelId == "version") {
+      foundVersion = reaction.messageId;
+      break;
+    }
+  }
+
+  if (foundVersion != null && foundVersion != pluginVersion) {
+    console.info(`[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`);
+    reactions.splice(reactions.indexOf({ channelId: "version", messageId: foundVersion }), 1);
+    reactions.push({ channelId: "version", messageId: pluginVersion });
+    saveReactions();
+  } else if (foundVersion == null) {
+    reactions.push({ channelId: "version", messageId: pluginVersion });
+    saveReactions();
+  }
 
   //#region registering
   // Register all commands and listeners
