@@ -1,5 +1,8 @@
-## A plugin for [Dragory's ModMail](https://github.com/dragory/modmailbot) that allows users to open threads with reactions
+## A plugin for [Dragory's ModMail](https://github.com/dragory/modmailbot) that allows users to open threads with reactions  
+**Currently on Version 1.1**  
+A full [changelog can be found here](https://github.com/MMPlugins/ReactionThreads/blob/main/CHANGELOG.md).  
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  
+  
 Table of Contents:
 - [Setup](#setup)
 - [Usage](#usage)
@@ -9,7 +12,8 @@ Table of Contents:
   - [Feature Requests](#feature-requests)
 - [Commands](#commands)
     - [Adding/Registering a reaction](#addingregistering-a-reaction)
-    - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)
+    - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)  
+    
 ## Setup
 Make sure you are running at least v3.2.0 of Modmail.
 in your config.ini file, create a new line and add  
