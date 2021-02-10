@@ -368,50 +368,54 @@ module.exports = async function ({ bot, config, commands, hooks, threads }) {
         if (!(message.channel instanceof Eris.PrivateChannel)) return;
         if (!(message.author)) return; // Prevent issue with user reacting to uncached messages
         if (!(message.author.bot)) return;
-        const userThread = await threads.findOpenThreadByUserId(reactor.id);
-        if (!userThread) return; // Assume accidental press rather than starting new thread 
 
-        const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
-        let reaction = null;
-        for (const _reaction of reactions) {
-            if (_reaction.emoji == stringifiedEmoji) {
-                reaction = _reaction;
-            }
-        }
-        if (reaction != null) {
-            const postToThreadChannel = config.showResponseMessageInThreadChannel;
-            const responseMessage = Array.isArray(config.responseMessage)
-                ? config.responseMessage.join("\n")
-                : config.responseMessage;
-            userThread.sendSystemMessageToUser(`${reaction.response ? reaction.response : responseMessage
-                }${config["reactionThreads-menu"] == false ? `` : ` (You can change your selection by sending \`` + config.prefix + `menu\`)`}`,
-                { postToThreadChannel }).catch(e => {
-                    userThread.postSystemMessage("⚠️ Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.")
-                });
-            if (userThread.channel_id) {
-                const categoryId = getCategory(reaction);
-                if (categoryId === null) {
-                    userThread.postSystemMessage(`⚠️ **ReactionThreads:** Failed to move thread into new category. ${reaction.categoryIds.length > 1 ? `Categories` : `Category`} for ${reaction.emoji
-                        } most likely ${reaction.categoryIds.length > 1 ? `have` : `has`} max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`!rtAddCat ${reaction.channelId
-                        } ${reaction.messageId} ${reaction.emoji} <new category ID>\` command!`);
-                    bot.deleteMessage(message.channel.id, message.id);
-                    return;
-                }
-                const oldChannel = bot.getChannel(userThread.channel_id);
-                bot.editChannel(userThread.channel_id, { parentID: categoryId }).then(newChannel => {
-                    if (oldChannel.parentID === newChannel.parentID) {
-                        userThread.postSystemMessage(`:gear: **ReactionThreads:** User reacted with ${reaction.emoji} thread does not need to move`);
-                    } else {
-                        const toPing = reaction.pingRoleId != null ? reaction.pingRoleId : null;
-                        userThread.postSystemMessage(`:gear: **ReactionThreads:** Thread moved because of reaction ${reaction.emoji}${toPing != null ? " <@&" + toPing + ">" : ""}`,
-                            { allowedMentions: { roles: [toPing] } },
-                        );
+        const userThread = await threads.findOpenThreadByUserId(reactor.id);
+        if (userThread) {
+            const oldChannel = bot.getChannel(userThread.channel_id);
+            if (oldChannel.parentID) {
+                const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
+                let reaction = null;
+                for (const _reaction of reactions) {
+                    if (_reaction.emoji == stringifiedEmoji) {
+                        reaction = _reaction;
                     }
-                });
-                bot.deleteMessage(message.channel.id, message.id);
-            } else {
-                console.error(`[ReactionThreads] Could not find this channel ID in the database: ${userThread.channel_id}`);
+                }
+
+                if (reaction != null) {
+                    bot.deleteMessage(message.channel.id, message.id);
+                    const postToThreadChannel = config.showResponseMessageInThreadChannel;
+                    const responseMessage = Array.isArray(config.responseMessage)
+                        ? config.responseMessage.join("\n")
+                        : config.responseMessage;
+                    userThread.sendSystemMessageToUser(`${reaction.response ? reaction.response : responseMessage
+                        }${config["reactionThreads-menu"] == false ? `` : ` (You can change your selection by sending \`` + config.prefix + `menu\`)`}`,
+                        { postToThreadChannel }).catch(e => {
+                            userThread.postSystemMessage("⚠️ Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.")
+                        });
+                    if (userThread.channel_id) {
+                        const categoryId = getCategory(reaction);
+                        if (categoryId === null) {
+                            userThread.postSystemMessage(`⚠️ **ReactionThreads:** Failed to move thread into new category. ${reaction.categoryIds.length > 1 ? `Categories` : `Category`} for ${reaction.emoji
+                                } most likely ${reaction.categoryIds.length > 1 ? `have` : `has`} max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`!rtAddCat ${reaction.channelId
+                                } ${reaction.messageId} ${reaction.emoji} <new category ID>\` command!`);
+                            return;
+                        }
+                        await bot.editChannel(userThread.channel_id, { parentID: categoryId }).then(newChannel => {
+                            console.log(`old: ${oldChannel.parentID}    new: ${newChannel.parentID}    ${oldChannel.parentID === newChannel.parentID}`)
+                            if (oldChannel.parentID === newChannel.parentID) {
+                                userThread.postSystemMessage(`:gear: **ReactionThreads:** User reacted with ${reaction.emoji} thread does not need to move`);
+                            } else {
+                                const toPing = reaction.pingRoleId != null ? reaction.pingRoleId : null;
+                                userThread.postSystemMessage(`:gear: **ReactionThreads:** Thread moved because of reaction ${reaction.emoji}${toPing != null ? " <@&" + toPing + ">" : ""}`,
+                                    { allowedMentions: { roles: [toPing] } },
+                                );
+                            }
+                        });
+                    }
+                }
             }
+        } else {
+            return; // Assume accidental press rather than starting new thread 
         }
     }
 
