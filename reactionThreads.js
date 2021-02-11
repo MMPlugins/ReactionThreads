@@ -333,8 +333,8 @@ module.exports = async function ({ bot, config, commands, hooks, threads }) {
               reaction.categoryIds.length > 1 ? `Categories` : `Category`
             } for ${reaction.emoji} most likely ${
               reaction.categoryIds.length > 1 ? `have` : `has`
-            } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`!rtAddCat ${
-              reaction.channelId
+            } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`${
+              config.prefix}rtAddCat ${reaction.channelId
             } ${reaction.messageId} ${reaction.emoji} <new category ID>\` command!`;
           }
         }
@@ -451,18 +451,13 @@ module.exports = async function ({ bot, config, commands, hooks, threads }) {
                   reaction.categoryIds.length > 1 ? `Categories` : `Category`
                 } for ${reaction.emoji} most likely ${
                   reaction.categoryIds.length > 1 ? `have` : `has`
-                } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`!rtAddCat ${
-                  reaction.channelId
+                } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`${
+                  config.prefix}rtAddCat ${reaction.channelId
                 } ${reaction.messageId} ${reaction.emoji} <new category ID>\` command!`,
               );
               return;
             }
             await bot.editChannel(userThread.channel_id, { parentID: categoryId }).then((newChannel) => {
-              console.log(
-                `old: ${oldChannel.parentID}    new: ${newChannel.parentID}    ${
-                  oldChannel.parentID === newChannel.parentID
-                }`,
-              );
               if (oldChannel.parentID === newChannel.parentID) {
                 userThread.postSystemMessage(
                   `:gear: **ReactionThreads:** User reacted with ${reaction.emoji} thread does not need to move`,
@@ -491,8 +486,8 @@ module.exports = async function ({ bot, config, commands, hooks, threads }) {
               reaction.categoryIds.length > 1 ? `Categories` : `Category`
             } for ${reaction.emoji} most likely ${
               reaction.categoryIds.length > 1 ? `have` : `has`
-            } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`!rtAddCat ${
-              reaction.channelId
+            } max channels (50)\n:gear: **ReactionThreads:** You can add a new category for this reaction by using the \`${
+              config.prefix}rtAddCat ${reaction.channelId
             } ${reaction.messageId} ${reaction.emoji} <new category ID>\` command!`;
           }
         }
