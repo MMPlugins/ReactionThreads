@@ -50,7 +50,7 @@ module.exports = function ({ bot, config, commands, threads }) {
     return null;
   };
 
-    /**
+  /**
    * Checks whether or not passed parameters has response
    * @param {string} channelId The ID of the channel for which to check
    * @param {string} messageId The ID of the message for which to check
@@ -131,7 +131,7 @@ module.exports = function ({ bot, config, commands, threads }) {
    * @param {Message} msg The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const addReactionRespCmd = async (msg, args) => {
+  const ReactionRespCmd = async (msg, args) => {
     if (!isOwner(msg)) return;
     reaction = isValidReaction(args.channelId, args.messageId, args.emoji);
     if (reaction == null) {
@@ -139,10 +139,39 @@ module.exports = function ({ bot, config, commands, threads }) {
       return;
     }
 
-    const response = emptyResponse.includes(args.response.trim()) ? null : args.response.trim();
-    reaction.response = response;
-    saveReactions();
-    msg.channel.createMessage("Successfully created/updated reaction response and registered it internally.");
+    if (args.response) {
+      const response = emptyResponse.includes(args.response.trim()) ? null : args.response.trim();
+      reaction.response = response;
+      saveReactions();
+      msg.channel.createMessage("Successfully created/updated reaction response and registered it internally.");
+    } else {
+      msg.channel.createMessage(
+        `The current response for that reaction is: \`${reaction.response ? reaction.response : "None"}\``,
+      );
+    }
+  };
+
+  /**
+   * Lists all (or specific) reactions
+   * @param {*} msg The message which invoked the command
+   * @param {*} args The arguments passed to us, i.e. an ID
+   */
+  const listReactionsCmd = async (msg, args) => {
+    const checkId = args.anyId ? args.anyId.trim() : null;
+    let toPost = "Emoji - Channel ID - Message ID - Category ID - First words of response";
+    for (const react of reactions) {
+      if (react.channelId === "version") continue;
+      if (args.anyId && !(react.categoryId === checkId || react.channelId === checkId || react.messageId === checkId))
+        continue;
+
+      const reactionText = `\n${react.emoji} - ${react.channelId} - ${react.messageId} - ${
+        react.categoryId ? react.categoryId : "None"
+      } - ${react.response ? react.response.substring(0, 25) + "..." : "None"}`;
+
+      toPost += reactionText;
+    }
+
+    msg.channel.createMessage(toPost);
   };
 
   /**
@@ -177,7 +206,8 @@ module.exports = function ({ bot, config, commands, threads }) {
 
       newThread
         .sendSystemMessageToUser(reaction.response ? reaction.response : responseMessage, { postToThreadChannel })
-        .catch((e) => { // Ideally this will be fixed upstream at some point
+        .catch((e) => {
+          // Ideally this will be fixed upstream at some point
           newThread.postSystemMessage(
             "⚠️ **ReactionThreads:** Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.",
           );
@@ -219,6 +249,7 @@ module.exports = function ({ bot, config, commands, threads }) {
     reactions.push({ channelId: "version", messageId: pluginVersion });
     saveReactions();
   }
+  //#endregion versioncheck
 
   //#region registering
   // Register all commands and listeners
@@ -251,9 +282,9 @@ module.exports = function ({ bot, config, commands, threads }) {
       { name: "channelId", type: "string", required: true },
       { name: "messageId", type: "string", required: true },
       { name: "emoji", type: "string", required: true },
-      { name: "response", type: "string", required: true, catchAll: true },
+      { name: "response", type: "string", required: false, catchAll: true },
     ],
-    addReactionRespCmd,
+    ReactionRespCmd,
   );
 
   commands.addInboxServerCommand(
@@ -265,6 +296,8 @@ module.exports = function ({ bot, config, commands, threads }) {
     ],
     removeReactionCmd,
   );
+
+  commands.addInboxServerCommand("rtList", [{ name: "anyId", type: "string", required: false }], listReactionsCmd);
 
   bot.on("messageReactionAdd", onReactionAdd);
   //#endregion
