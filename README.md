@@ -1,5 +1,5 @@
 ## A plugin for [Dragory's ModMail](https://github.com/dragory/modmailbot) that allows users to open threads with reactions  
-**Currently on Version 1.1**  
+**Currently on Version 1.2**  
 A full [changelog can be found here](https://github.com/MMPlugins/ReactionThreads/blob/main/CHANGELOG.md).  
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  
   
@@ -15,7 +15,7 @@ Table of Contents:
     - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)  
     
 ## Setup
-Make sure you are running at least v3.2.0 of Modmail.
+Make sure you are running at least v3.3.0 of Modmail.
 in your config.ini file, create a new line and add  
 ```
 plugins[] = npm:MMPlugins/ReactionThreads
@@ -59,7 +59,21 @@ This will register a new reaction and immediately activate it, making any reacti
 ### Removing/De-Registering a reaction
 Signature: `!rtRemove <ChannelID> <MessageID> <Emoji>`  
 This will de-register an already existing reaction. All threads opened via the reaction remain open.  
-Takes the same arguments as `!rtAdd` but without the optional parameters, as that is not needed for reaction matching (cannot have the same emoji twice).
+Takes the same arguments as `!rtAdd` but without the optional parameters, as that is not needed for reaction matching (cannot have the same emoji twice).  
+
+### Adding/Removing/Displaying custom responses
+Signature: `!rtResponse <ChannelID> <MessageID> <Emoji> [Response]`  
+Takes the same parameters as `!rtRemove` and also an optional `Response` parameter.  
+If the optional parameter is *not* passed, the bot will display the currently set custom response.  
+If the optional parameter *is* passed, the bot will set the reaction to use this new response.
+- `Response` can by any string, including emojis. To use emoji, the bot must be on the server the emoji is from. Besides this, the only thing that limits a response length is a maximum of 1500 characters.  
+
+This command and its functionality was made by [YetAnotherConnor](https://github.com/YetAnotherConnor).
+  
+### Listing all reactions
+Signature: Signature: `!rtList [Any ID]`  
+This will return a list of all current reactions that match the ID filter if one is given.  
+- `Any ID` can be any of the IDs available for reactions: `Channel ID`, `Message ID` and `Category ID`. If this parameter is passed, only reactions that are on that message or in that channel etc. get listed. 
 
 
 Table of Contents: 
@@ -72,5 +86,7 @@ Table of Contents:
 - [Commands](#commands)
     - [Adding/Registering a reaction](#addingregistering-a-reaction)
     - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)  
+    - [Adding/Removing/Displaying custom responses](#addingremovingdisplaying-custom-responses)  
+    - [Listing all reactions](#listing-all-reactions)
   
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  
