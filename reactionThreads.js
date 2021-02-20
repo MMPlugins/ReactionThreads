@@ -1,7 +1,8 @@
 module.exports = function ({ bot, config, commands, threads }) {
   const fs = require("fs");
+  const Eris = require("eris");
   const pluginVersion = "1.1";
-  const changelogUrl = "=> https://daark.de/RTCL <="
+  const changelogUrl = "=> https://daark.de/RTCL <=";
   let reactions = [];
 
   // Check if ownerId is specified in the config, warn otherwise
@@ -34,6 +35,27 @@ module.exports = function ({ bot, config, commands, threads }) {
   };
 
   /**
+   * Checks whether or not passed parameters has response
+   * @param {string} channelId The ID of the channel for which to check
+   * @param {string} messageId The ID of the message for which to check
+   * @param {string} emoji The stringified emoji for which to check (i.e. <:test:108552944961454080>)
+   * @returns full reaction if valid, null if not
+   */
+  const hasResponse = function (channelId, messageId, emoji) {
+    for (const reaction of reactions) {
+      if (
+        reaction.channelId == channelId &&
+        reaction.messageId == messageId &&
+        reaction.emoji == emoji &&
+        reaction.response
+      ) {
+        return reaction;
+      }
+    }
+    return null;
+  };
+
+  /**
    * Checks whether or not passed parameters are a valid reaction
    * @param {string} channelId The ID of the channel for which to check
    * @param {string} messageId The ID of the message for which to check
@@ -52,18 +74,18 @@ module.exports = function ({ bot, config, commands, threads }) {
   const isOwner = function (message) {
     if (typeof ownerId === "undefined") return true;
     return message.member.id === ownerId ? true : message.member.roles.includes(ownerId);
-  }
+  };
 
   /**
    * Registers a new reaction for use
-   * @param {Message} msg The message invoking the command
+   * @param {Message} message The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const addReactionCmd = async (msg, args) => {
-    if (!isOwner(msg)) return;
+  const addReactionCmd = async (message, args) => {
+    if (!isOwner(message)) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
     if (isValidReaction(args.channelId, args.messageId, args.emoji)) {
-      msg.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
+      message.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
       return;
     }
     args.categoryId = args.categoryId ? args.categoryId : null;
@@ -72,7 +94,7 @@ module.exports = function ({ bot, config, commands, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.addMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""));
     } catch (e) {
-      msg.channel.createMessage(
+      message.channel.createMessage(
         `⚠️ Unable to add reaction: \`${e}\`\nPlease ensure that the IDs are correct and that the emoji is from one of the servers the bot is on!`,
       );
       return;
@@ -80,19 +102,19 @@ module.exports = function ({ bot, config, commands, threads }) {
 
     reactions.push({ ...args });
     saveReactions();
-    msg.channel.createMessage("Succesfully added reaction to message and registered it internally.");
+    message.channel.createMessage("Succesfully added reaction to message and registered it internally.");
   };
 
   /**
    * Unregisters an existing reaction
-   * @param {Message} msg The message invoking the command
+   * @param {Message} message The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const removeReactionCmd = async (msg, args) => {
-    if (!isOwner(msg)) return;
+  const removeReactionCmd = async (message, args) => {
+    if (!isOwner(message)) return;
     // Didnt work without JSON.stringify, but if its stupid but it works...
     if (isValidReaction(args.channelId, args.messageId, args.emoji) == null) {
-      msg.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesnt exist on that message!`);
+      message.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesnt exist on that message!`);
       return;
     }
 
@@ -100,12 +122,36 @@ module.exports = function ({ bot, config, commands, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.removeMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""), bot.user.id);
     } catch (e) {
-      msg.channel.createMessage(`⚠️ Unable to remove reaction: \`${e}\``);
+      message.channel.createMessage(`⚠️ Unable to remove reaction: \`${e}\``);
     }
 
     reactions.splice(reactions.indexOf({ ...args }), 1);
     saveReactions();
-    msg.channel.createMessage("Succesfully removed reaction from message and de-registered it internally.");
+    message.channel.createMessage("Succesfully removed reaction from message and de-registered it internally.");
+  };
+
+  /**
+   * Registers a new or updates an existing reaction response
+   * @param {Message} message The message invoking the command
+   * @param {*} args The arguments passed (check registering at bottom)
+   */
+  const addReactionRespCmd = async (message, args) => {
+    if (!isOwner(message)) return;
+    // Didnt work without JSON.stringify, but if its stupid but it works...
+    reaction = isValidReaction(args.channelId, args.messageId, args.emoji);
+    if (reaction == null) {
+      message.channel.createMessage(`⚠️ Unable to add reaction response: That reaction doesnt exist on that message!`);
+      return;
+    }
+    if (hasResponse(args.channelId, args.messageId, args.emoji)) {
+      reaction.response = args.response;
+      saveReactions();
+      message.channel.createMessage("Succesfully updated reaction response and registered it internally.");
+    } else {
+      reaction.response = args.response;
+      saveReactions();
+      message.channel.createMessage("Succesfully added reaction response and registered it internally.");
+    }
   };
 
   /**
@@ -136,12 +182,21 @@ module.exports = function ({ bot, config, commands, threads }) {
         }/${message.channel.id}/${message.id}${toPing != null ? " <@&" + toPing + ">" : ""}`,
         { allowedMentions: { roles: [toPing] } },
       );
-      newThread.sendSystemMessageToUser(responseMessage, { postToThreadChannel });
+      if (errorReply) {
+        newThread.postSystemMessage(errorReply);
+      }
+      newThread
+        .sendSystemMessageToUser(reaction.response ? reaction.response : responseMessage, { postToThreadChannel })
+        .catch((e) => {
+          newThread.postSystemMessage(
+            "⚠️ Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.",
+          );
+        });
 
       try {
         await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
       } catch (e) {
-        newThread.postSystemMessage(`⚠️ Failed to remove reaction from message: \`${e}\``);
+        newThread.postSystemMessage(`⚠️ **ReactionThreads:** Failed to remove reaction from message: \`${e}\``);
       }
     } else if (reaction != null) {
       // Only remove reaction if the user has an existing thread
@@ -152,7 +207,6 @@ module.exports = function ({ bot, config, commands, threads }) {
       }
     }
   };
-
 
   //#region versioncheck
   // Check the plugin version and notify of any updates that happened
@@ -165,7 +219,9 @@ module.exports = function ({ bot, config, commands, threads }) {
   }
 
   if (foundVersion != null && foundVersion != pluginVersion) {
-    console.info(`[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`);
+    console.info(
+      `[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`,
+    );
     reactions.splice(reactions.indexOf({ channelId: "version", messageId: foundVersion }), 1);
     reactions.push({ channelId: "version", messageId: pluginVersion });
     saveReactions();
@@ -197,6 +253,17 @@ module.exports = function ({ bot, config, commands, threads }) {
       { name: "pingRoleId", type: "string", required: false },
     ],
     addReactionCmd,
+  );
+
+  commands.addInboxServerCommand(
+    "rtAddResp",
+    [
+      { name: "channelId", type: "string", required: true },
+      { name: "messageId", type: "string", required: true },
+      { name: "emoji", type: "string", required: true },
+      { name: "response", type: "string", required: true, catchAll: true },
+    ],
+    addReactionRespCmd,
   );
 
   commands.addInboxServerCommand(
