@@ -21,9 +21,7 @@
     "url": "https://github.com/DarkView/ReactionThreads/issues"
   },
   "devDependencies": {
-    "eslint": "^7.12.1"
-  },
-  "dependencies": {
+    "eslint": "^7.12.1",
     "prettier": "^2.2.1"
-  }
+  },
 }
