@@ -1,6 +1,6 @@
 module.exports = function ({ bot, config, commands, threads }) {
   const fs = require("fs");
-  const pluginVersion = "1.1";
+  const pluginVersion = "1.2";
   const changelogUrl = "=> https://daark.de/RTCL <=";
   let reactions = [];
   const emptyResponse = ["none", "nothing", "empty", "null", "-"];
@@ -141,6 +141,11 @@ module.exports = function ({ bot, config, commands, threads }) {
 
     if (args.response) {
       const response = emptyResponse.includes(args.response.trim()) ? null : args.response.trim();
+      if (response.length > 1500) {
+        msg.channel.createMessage("⚠️ That custom response is too long!");
+        return;
+      }
+
       reaction.response = response;
       saveReactions();
       msg.channel.createMessage("Successfully created/updated reaction response and registered it internally.");
@@ -157,6 +162,7 @@ module.exports = function ({ bot, config, commands, threads }) {
    * @param {*} args The arguments passed to us, i.e. an ID
    */
   const listReactionsCmd = async (msg, args) => {
+    if (!isOwner(msg)) return;
     const checkId = args.anyId ? args.anyId.trim() : null;
     let toPost = "Emoji - Channel ID - Message ID - Category ID - First words of response";
     for (const react of reactions) {
