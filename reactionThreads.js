@@ -1,9 +1,9 @@
 module.exports = function ({ bot, config, commands, threads }) {
   const fs = require("fs");
-  const Eris = require("eris");
   const pluginVersion = "1.1";
   const changelogUrl = "=> https://daark.de/RTCL <=";
   let reactions = [];
+  const emptyResponse = ["none", "nothing", "empty", "null", "-"];
 
   // Check if ownerId is specified in the config, warn otherwise
   const ownerId = config["reactionThreads-ownerId"];
@@ -15,7 +15,7 @@ module.exports = function ({ bot, config, commands, threads }) {
   // Load the suffix for the json file, if one exists (used for multiple bot instances running from the same folder)
   const jsonSuffix = config["reactionThreads-suffix"] ? config["reactionThreads-suffix"] : "";
 
-  // Warn the user not to delete the file in case it doesnt exist (basically a first-use check)
+  // Warn the user not to delete the file in case it doesn't exist (basically a first-use check)
   if (!fs.existsSync(`./ReactionThreadsData${jsonSuffix}.json`)) {
     console.info(
       `[ReactionThreads] A ReactionThreadsData${jsonSuffix}.json file will be created when using this plugin. Please do not modify or delete this file or reactions you set up will cease to function.`,
@@ -35,27 +35,6 @@ module.exports = function ({ bot, config, commands, threads }) {
   };
 
   /**
-   * Checks whether or not passed parameters has response
-   * @param {string} channelId The ID of the channel for which to check
-   * @param {string} messageId The ID of the message for which to check
-   * @param {string} emoji The stringified emoji for which to check (i.e. <:test:108552944961454080>)
-   * @returns full reaction if valid, null if not
-   */
-  const hasResponse = function (channelId, messageId, emoji) {
-    for (const reaction of reactions) {
-      if (
-        reaction.channelId == channelId &&
-        reaction.messageId == messageId &&
-        reaction.emoji == emoji &&
-        reaction.response
-      ) {
-        return reaction;
-      }
-    }
-    return null;
-  };
-
-  /**
    * Checks whether or not passed parameters are a valid reaction
    * @param {string} channelId The ID of the channel for which to check
    * @param {string} messageId The ID of the message for which to check
@@ -71,21 +50,39 @@ module.exports = function ({ bot, config, commands, threads }) {
     return null;
   };
 
-  const isOwner = function (message) {
+    /**
+   * Checks whether or not passed parameters has response
+   * @param {string} channelId The ID of the channel for which to check
+   * @param {string} messageId The ID of the message for which to check
+   * @param {string} emoji The stringified emoji for which to check (i.e. <:test:108552944961454080>)
+   * @returns full reaction if valid, null if not
+   */
+  const hasResponse = function (channelId, messageId, emoji) {
+    const reaction = isValidReaction(channelId, messageId, emoji);
+    if (reaction && reaction.response) {
+      return reaction;
+    }
+    return null;
+  };
+
+  /**
+   * Checks whether or not the user invoking a command is authorized or not
+   * @param {*} msg the message to check permissions for
+   */
+  const isOwner = function (msg) {
     if (typeof ownerId === "undefined") return true;
-    return message.member.id === ownerId ? true : message.member.roles.includes(ownerId);
+    return msg.member.id === ownerId ? true : msg.member.roles.includes(ownerId);
   };
 
   /**
    * Registers a new reaction for use
-   * @param {Message} message The message invoking the command
+   * @param {Message} msg The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const addReactionCmd = async (message, args) => {
-    if (!isOwner(message)) return;
-    // Didnt work without JSON.stringify, but if its stupid but it works...
+  const addReactionCmd = async (msg, args) => {
+    if (!isOwner(msg)) return;
     if (isValidReaction(args.channelId, args.messageId, args.emoji)) {
-      message.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
+      msg.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
       return;
     }
     args.categoryId = args.categoryId ? args.categoryId : null;
@@ -94,7 +91,7 @@ module.exports = function ({ bot, config, commands, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.addMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""));
     } catch (e) {
-      message.channel.createMessage(
+      msg.channel.createMessage(
         `⚠️ Unable to add reaction: \`${e}\`\nPlease ensure that the IDs are correct and that the emoji is from one of the servers the bot is on!`,
       );
       return;
@@ -102,19 +99,18 @@ module.exports = function ({ bot, config, commands, threads }) {
 
     reactions.push({ ...args });
     saveReactions();
-    message.channel.createMessage("Succesfully added reaction to message and registered it internally.");
+    msg.channel.createMessage("Successfully added reaction to message and registered it internally.");
   };
 
   /**
-   * Unregisters an existing reaction
-   * @param {Message} message The message invoking the command
+   * Deregister an existing reaction
+   * @param {Message} msg The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const removeReactionCmd = async (message, args) => {
-    if (!isOwner(message)) return;
-    // Didnt work without JSON.stringify, but if its stupid but it works...
+  const removeReactionCmd = async (msg, args) => {
+    if (!isOwner(msg)) return;
     if (isValidReaction(args.channelId, args.messageId, args.emoji) == null) {
-      message.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesnt exist on that message!`);
+      msg.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesn't exist on that message!`);
       return;
     }
 
@@ -122,43 +118,38 @@ module.exports = function ({ bot, config, commands, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.removeMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""), bot.user.id);
     } catch (e) {
-      message.channel.createMessage(`⚠️ Unable to remove reaction: \`${e}\``);
+      msg.channel.createMessage(`⚠️ Unable to remove reaction: \`${e}\``);
     }
 
     reactions.splice(reactions.indexOf({ ...args }), 1);
     saveReactions();
-    message.channel.createMessage("Succesfully removed reaction from message and de-registered it internally.");
+    msg.channel.createMessage("Successfully removed reaction from message and de-registered it internally.");
   };
 
   /**
-   * Registers a new or updates an existing reaction response
-   * @param {Message} message The message invoking the command
+   * Registers or updates a reaction response
+   * @param {Message} msg The message invoking the command
    * @param {*} args The arguments passed (check registering at bottom)
    */
-  const addReactionRespCmd = async (message, args) => {
-    if (!isOwner(message)) return;
-    // Didnt work without JSON.stringify, but if its stupid but it works...
+  const addReactionRespCmd = async (msg, args) => {
+    if (!isOwner(msg)) return;
     reaction = isValidReaction(args.channelId, args.messageId, args.emoji);
     if (reaction == null) {
-      message.channel.createMessage(`⚠️ Unable to add reaction response: That reaction doesnt exist on that message!`);
+      msg.channel.createMessage(`⚠️ Unable to add reaction response: That reaction doesn't exist on that message!`);
       return;
     }
-    if (hasResponse(args.channelId, args.messageId, args.emoji)) {
-      reaction.response = args.response;
-      saveReactions();
-      message.channel.createMessage("Succesfully updated reaction response and registered it internally.");
-    } else {
-      reaction.response = args.response;
-      saveReactions();
-      message.channel.createMessage("Succesfully added reaction response and registered it internally.");
-    }
+
+    const response = emptyResponse.includes(args.response.trim()) ? null : args.response.trim();
+    reaction.response = response;
+    saveReactions();
+    msg.channel.createMessage("Successfully created/updated reaction response and registered it internally.");
   };
 
   /**
    * Handles any reaction added within a guild. If it is a registered reaction, create a thread if none exists
    * @param {Message} message The message that got reacted to
    * @param {Emoji} emoji The emoji used to react
-   * @param {Member} reactor The memeber object of the person reacting
+   * @param {Member} reactor The member object of the person reacting
    */
   const onReactionAdd = async (message, emoji, reactor) => {
     if (reactor.user.bot || !reactor.guild) return;
@@ -176,27 +167,26 @@ module.exports = function ({ bot, config, commands, threads }) {
         ? config.responseMessage.join("\n")
         : config.responseMessage;
       const postToThreadChannel = config.showResponseMessageInThreadChannel;
+
       await newThread.postSystemMessage(
         `:gear: **ReactionThreads:** Thread opened because of reaction ${stringifiedEmoji} to https://discord.com/channels/${
           message.channel.guild.id
         }/${message.channel.id}/${message.id}${toPing != null ? " <@&" + toPing + ">" : ""}`,
         { allowedMentions: { roles: [toPing] } },
       );
-      if (errorReply) {
-        newThread.postSystemMessage(errorReply);
-      }
+
       newThread
         .sendSystemMessageToUser(reaction.response ? reaction.response : responseMessage, { postToThreadChannel })
-        .catch((e) => {
+        .catch((e) => { // Ideally this will be fixed upstream at some point
           newThread.postSystemMessage(
-            "⚠️ Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.",
+            "⚠️ **ReactionThreads:** Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.",
           );
         });
 
       try {
         await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
       } catch (e) {
-        newThread.postSystemMessage(`⚠️ **ReactionThreads:** Failed to remove reaction from message: \`${e}\``);
+        newThread.postSystemMessage(`⚠️ Failed to remove reaction from message: \`${e}\``);
       }
     } else if (reaction != null) {
       // Only remove reaction if the user has an existing thread
@@ -256,7 +246,7 @@ module.exports = function ({ bot, config, commands, threads }) {
   );
 
   commands.addInboxServerCommand(
-    "rtAddResp",
+    "rtResponse",
     [
       { name: "channelId", type: "string", required: true },
       { name: "messageId", type: "string", required: true },
