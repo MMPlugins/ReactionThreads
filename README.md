@@ -67,6 +67,7 @@ Takes the same parameters as `!rtRemove` and also an optional `Response` paramet
 If the optional parameter is *not* passed, the bot will display the currently set custom response.  
 If the optional parameter *is* passed, the bot will set the reaction to use this new response.
 - `Response` can by any string, including emojis. To use emoji, the bot must be on the server the emoji is from. Besides this, the only thing that limits a response length is a maximum of 1500 characters.  
+If you want to completely remove a response, pass one of the following without anything else: `none`, `nothing`, `empty`, `null`, `-`.  
 
 This command and its functionality was made by [YetAnotherConnor](https://github.com/YetAnotherConnor).
   
