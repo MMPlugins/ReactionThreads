@@ -24,9 +24,9 @@ jobs:
     - name: lint
       working-directory: ./
       run: |
-        prettier --write \"reactionThreads.js\"
+        npm run lint
     - name: code style check
       working-directory: ./
       run: |
-        prettier --check \"reactionThreads.js\"
+        npm run format
     
