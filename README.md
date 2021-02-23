@@ -45,7 +45,8 @@ If you want to request or suggest a feature, open an issue on the [plugins issue
 In case the feature you want to request is outside of the scope of this plugin (anything not to do with reactions creating threads) please use the `#plugin-requests` channel on the [official support discord](https://discord.gg/vRuhG9R).
 ## Commands
 
-Parameters in <> are required, parameters in [] optional.
+Parameters in <> are required, parameters in [] are optional.  
+These commands only work on the inbox server, just like regular ModMail commands.  
 ### Adding/Registering a reaction
 Signature 1: `!rtAdd <ChannelID> <MessageID> <Emoji> [CategoryID]`  
 Signature 2: `!rtAdd <ChannelID> <MessageID> <Emoji> <CategoryID> [PingRoleID]`  
