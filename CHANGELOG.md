@@ -1,7 +1,7 @@
 ## Version 1.2
 - New command: `rtList`  
 Allows any owner to list all reactions the bot currently has registered
-- New command: `rtResponse` by [YetAnotherConnor](https://github.com/YetAnotherConnor)
+- New command: `rtResponse` by [YetAnotherConnor](https://github.com/YetAnotherConnor)  
 Allows you to set a custom response for specific reactions which will be sent instead of the regular response message.  
   
 Please read the [command documentation](https://github.com/MMPlugins/ReactionThreads#commands) to learn how to use these new commands!
