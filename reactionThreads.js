@@ -1,4 +1,4 @@
-module.exports = function ({ bot, config, commands, threads }) {
+module.exports = function ({ bot, config, commands, knex, threads }) {
   const fs = require("fs");
   const pluginVersion = "1.2";
   const changelogUrl = "=> https://daark.de/RTCL <=";
@@ -34,6 +34,18 @@ module.exports = function ({ bot, config, commands, threads }) {
     fs.writeFileSync(`./ReactionThreadsData${jsonSuffix}.json`, JSON.stringify(reactions));
   };
 
+  /**
+   * Checks whether userId is blocked
+   * @param {String} userId
+   * @returns {Promise<Boolean>}
+   */
+  async function isBlocked(userId) {
+    const row = await knex("blocked_users")
+      .where("user_id", userId)
+      .first();
+    return !!row;
+  }
+  
   /**
    * Checks whether or not passed parameters are a valid reaction
    * @param {string} channelId The ID of the channel for which to check
@@ -191,7 +203,7 @@ module.exports = function ({ bot, config, commands, threads }) {
     const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
     const reaction = isValidReaction(message.channel.id, message.id, stringifiedEmoji);
     const userHasThread = await threads.findOpenThreadByUserId(reactor.id);
-    if (reaction != null && userHasThread == null) {
+    if (reaction != null && userHasThread == null && !(await isBlocked(reactor.id))) {
       const newThread = await threads.createNewThreadForUser(reactor.user, {
         source: "reaction",
         categoryId: reaction.categoryId,
@@ -225,7 +237,7 @@ module.exports = function ({ bot, config, commands, threads }) {
         newThread.postSystemMessage(`⚠️ Failed to remove reaction from message: \`${e}\``);
       }
     } else if (reaction != null) {
-      // Only remove reaction if the user has an existing thread
+      // Only remove reaction if the user has an existing thread or user is blocked
       try {
         await bot.removeMessageReaction(message.channel.id, message.id, stringifiedEmoji.replace(">", ""), reactor.id);
       } catch (e) {
