@@ -251,6 +251,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
   const refreshReactions = async (msg = null) => {
     clearTimeout(refreshTimeout);
     if (msg) {
+      if (!isOwner(msg)) return;
       msg = await msg.channel.createMessage(`Refreshing all reactions...`);
     }
 
