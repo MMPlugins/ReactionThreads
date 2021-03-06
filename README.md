@@ -1,5 +1,5 @@
 ## A plugin for [Dragory's ModMail](https://github.com/dragory/modmailbot) that allows users to open threads with reactions  
-**Currently on Version 1.2**  
+**Currently on Version 1.3**  
 A full [changelog can be found here](https://github.com/MMPlugins/ReactionThreads/blob/main/CHANGELOG.md).  
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  
   
@@ -13,6 +13,9 @@ Table of Contents:
 - [Commands](#commands)
     - [Adding/Registering a reaction](#addingregistering-a-reaction)
     - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)  
+    - [Adding/Removing/Displaying custom responses](#addingremovingdisplaying-custom-responses)  
+    - [Listing all reactions](#listing-all-reactions)  
+    - [Refreshing all reactions](#refreshing-all-reactions)  
     
 ## Setup
 Make sure you are running at least v3.3.0 of Modmail.
@@ -73,9 +76,14 @@ If you want to completely remove a response, pass one of the following without a
 This command and its functionality was made by [YetAnotherConnor](https://github.com/YetAnotherConnor).
   
 ### Listing all reactions
-Signature: Signature: `!rtList [Any ID]`  
+Signature: `!rtList [Any ID]`  
 This will return a list of all current reactions that match the ID filter if one is given.  
-- `Any ID` can be any of the IDs available for reactions: `Channel ID`, `Message ID` and `Category ID`. If this parameter is passed, only reactions that are on that message or in that channel etc. get listed. 
+- `Any ID` can be any of the IDs available for reactions: `Channel ID`, `Message ID` and `Category ID`. If this parameter is passed, only reactions that are on that message or in that channel etc. get listed.  
+
+### Refreshing all reactions
+Signature: `!rtRefresh`  
+This will refresh all reactions this plugin manages.  
+This happens every 30 minutes automatically, and this command advances the next refresh to happen immediately.
 
 
 Table of Contents: 
@@ -89,6 +97,7 @@ Table of Contents:
     - [Adding/Registering a reaction](#addingregistering-a-reaction)
     - [Removing/De-Registering a reaction](#removingde-registering-a-reaction)  
     - [Adding/Removing/Displaying custom responses](#addingremovingdisplaying-custom-responses)  
-    - [Listing all reactions](#listing-all-reactions)
+    - [Listing all reactions](#listing-all-reactions)  
+    - [Refreshing all reactions](#refreshing-all-reactions)
   
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  

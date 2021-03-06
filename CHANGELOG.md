@@ -1,3 +1,12 @@
+## Version 1.3
+- New command: `rtRefresh`  
+Allows any owner to instantly refresh all reactions  
+  
+The bot now removes and re-applies all reactions it manages automatically every 30 minutes and on restart.  
+In case you want to immediately refresh, you can use the `rtRefresh` command which advances the next check so it happens right away.
+  
+Please read the [command documentation](https://github.com/MMPlugins/ReactionThreads#commands) to learn how to use this new command!
+
 ## Version 1.2
 - New command: `rtList`  
 Allows any owner to list all reactions the bot currently has registered
