@@ -1,9 +1,10 @@
 module.exports = function ({ bot, config, commands, knex, threads }) {
   const fs = require("fs");
-  const pluginVersion = "1.2";
+  const pluginVersion = "1.3";
   const changelogUrl = "=> https://daark.de/RTCL <=";
   let reactions = [];
   const emptyResponse = ["none", "nothing", "empty", "null", "-"];
+  let refreshTimeout = null;
 
   // Check if ownerId is specified in the config, warn otherwise
   const ownerId = config["reactionThreads-ownerId"];
@@ -246,24 +247,50 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     }
   };
 
+  //#region reaction refresh loop
+  const refreshReactions = async (msg = null) => {
+    clearTimeout(refreshTimeout);
+    if (msg) {
+      msg = await msg.channel.createMessage(`Refreshing all reactions...`);
+    }
+
+    for (const react of reactions) {
+      if (react.channelId === "version") continue;
+      const emoji = react.emoji.replace(">", "");
+
+      await bot.removeMessageReaction(react.channelId, react.messageId, emoji, bot.user.id).catch(() => {});
+      await bot.addMessageReaction(react.channelId, react.messageId, emoji);
+    }
+
+    if (msg) {
+      await msg.edit(`Done!`);
+    }
+    refreshTimeout = setTimeout(() => {
+      refreshReactions();
+    }, 1000 * 60 * 30); //Refresh reactions every 30 minutes 
+  }
+
+  refreshReactions();
+  //#endregion
+
   //#region versioncheck
   // Check the plugin version and notify of any updates that happened
-  let foundVersion = null;
+  let reactVersion = null;
   for (const reaction of reactions) {
     if (reaction.channelId == "version") {
-      foundVersion = reaction.messageId;
+      reactVersion = reaction;
       break;
     }
   }
 
-  if (foundVersion != null && foundVersion != pluginVersion) {
+  if (reactVersion.messageId != null && reactVersion.messageId != pluginVersion) {
     console.info(
       `[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`,
     );
-    reactions.splice(reactions.indexOf({ channelId: "version", messageId: foundVersion }), 1);
+    reactions.splice(reactions.indexOf(reactVersion), 1);
     reactions.push({ channelId: "version", messageId: pluginVersion });
     saveReactions();
-  } else if (foundVersion == null) {
+  } else if (reactVersion == null) {
     reactions.push({ channelId: "version", messageId: pluginVersion });
     saveReactions();
   }
@@ -316,6 +343,8 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
   );
 
   commands.addInboxServerCommand("rtList", [{ name: "anyId", type: "string", required: false }], listReactionsCmd);
+
+  commands.addInboxServerCommand("rtRefresh", [], refreshReactions);
 
   bot.on("messageReactionAdd", onReactionAdd);
   //#endregion
