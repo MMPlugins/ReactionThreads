@@ -284,7 +284,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     }
   }
 
-  if (reactVersion.messageId != null && reactVersion.messageId != pluginVersion) {
+  if (reactVersion && reactVersion.messageId != null && reactVersion.messageId != pluginVersion) {
     console.info(
       `[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`,
     );
