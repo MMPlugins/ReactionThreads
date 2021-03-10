@@ -263,7 +263,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       await bot.addMessageReaction(react.channelId, react.messageId, emoji).catch(e => {
         console.warn(`[ReactionThreads] Error applying reaction ${react.emoji} to message ${react.channelId}-${react.messageId}: ${e}\nIf you deleted the message, use rtRemove ASAP`);
         if (msg) {
-          msg.channel.createMessage(`Error applying reaction ${react.emoji} to message ${react.messageId} in <#${react.channelId}>: ${e}\nIf you deleted the message, use rtRemove ASAP`);
+          msg.channel.createMessage(`Error applying reaction ${react.emoji} to message ${react.messageId} in <#${react.channelId}>: ${e}\nIf you deleted the message, use \`rtRemove ${react.channelId} ${react.messageId} ${react.emoji}\``);
         }
       });
     }
