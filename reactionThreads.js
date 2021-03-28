@@ -200,6 +200,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
    * @param {Member} reactor The member object of the person reacting
    */
   const onReactionAdd = async (message, emoji, reactor) => {
+    if (!reactor.user) return;
     if (reactor.user.bot || !reactor.guild) return;
     const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
     const reaction = isValidReaction(message.channel.id, message.id, stringifiedEmoji);
