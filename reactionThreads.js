@@ -200,6 +200,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
    * @param {Member} reactor The member object of the person reacting
    */
   const onReactionAdd = async (message, emoji, reactor) => {
+    if (!reactor.user) return;
     if (reactor.user.bot || !reactor.guild) return;
     const stringifiedEmoji = emoji.id ? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>` : emoji.name;
     const reaction = isValidReaction(message.channel.id, message.id, stringifiedEmoji);
@@ -260,7 +261,12 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       const emoji = react.emoji.replace(">", "");
 
       await bot.removeMessageReaction(react.channelId, react.messageId, emoji, bot.user.id).catch(() => {});
-      await bot.addMessageReaction(react.channelId, react.messageId, emoji);
+      await bot.addMessageReaction(react.channelId, react.messageId, emoji).catch(e => {
+        console.warn(`[ReactionThreads] Error applying reaction ${react.emoji} to message ${react.channelId}-${react.messageId}: ${e}\nIf you deleted the message, use rtRemove ASAP`);
+        if (msg) {
+          msg.channel.createMessage(`Error applying reaction ${react.emoji} to message ${react.messageId} in <#${react.channelId}>: ${e}\nIf you deleted the message, use \`rtRemove ${react.channelId} ${react.messageId} ${react.emoji}\``);
+        }
+      });
     }
 
     if (msg) {
@@ -284,7 +290,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     }
   }
 
-  if (reactVersion.messageId != null && reactVersion.messageId != pluginVersion) {
+  if (reactVersion && reactVersion.messageId != null && reactVersion.messageId != pluginVersion) {
     console.info(
       `[ReactionThreads] Plugin updated to version ${pluginVersion}, please read the changelog at ${changelogUrl} as there may be important or breaking changes!`,
     );
