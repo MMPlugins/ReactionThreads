@@ -41,12 +41,10 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
    * @returns {Promise<Boolean>}
    */
   async function isBlocked(userId) {
-    const row = await knex("blocked_users")
-      .where("user_id", userId)
-      .first();
+    const row = await knex("blocked_users").where("user_id", userId).first();
     return !!row;
   }
-  
+
   /**
    * Checks whether or not passed parameters are a valid reaction
    * @param {string} channelId The ID of the channel for which to check
@@ -95,7 +93,10 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
   const addReactionCmd = async (msg, args) => {
     if (!isOwner(msg)) return;
     if (isValidReaction(args.channelId, args.messageId, args.emoji)) {
-      msg.channel.createMessage(`⚠️ Unable to add reaction: That reaction already exists on that message!`);
+      msg.channel.createMessage({
+        content: `⚠️ Unable to add reaction: That reaction already exists on that message!`,
+        messageReferenceID: msg.id,
+      });
       return;
     }
     args.categoryId = args.categoryId ? args.categoryId : null;
@@ -104,15 +105,19 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.addMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""));
     } catch (e) {
-      msg.channel.createMessage(
-        `⚠️ Unable to add reaction: \`${e}\`\nPlease ensure that the IDs are correct and that the emoji is from one of the servers the bot is on!`,
-      );
+      msg.channel.createMessage({
+        content: `⚠️ Unable to add reaction: \`${e}\`\nPlease ensure that the IDs are correct and that the emoji is from one of the servers the bot is on!`,
+        messageReferenceID: msg.id,
+      });
       return;
     }
 
     reactions.push({ ...args });
     saveReactions();
-    msg.channel.createMessage("Successfully added reaction to message and registered it internally.");
+    msg.channel.createMessage({
+      content: "Successfully added reaction to message and registered it internally.",
+      messageReferenceID: msg.id,
+    });
   };
 
   /**
@@ -123,7 +128,10 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
   const removeReactionCmd = async (msg, args) => {
     if (!isOwner(msg)) return;
     if (isValidReaction(args.channelId, args.messageId, args.emoji) == null) {
-      msg.channel.createMessage(`⚠️ Unable to remove reaction: That reaction doesn't exist on that message!`);
+      msg.channel.createMessage({
+        content: `⚠️ Unable to remove reaction: That reaction doesn't exist on that message!`,
+        messageReferenceID: msg.id,
+      });
       return;
     }
 
@@ -131,12 +139,15 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       // Replace the trailing > because eris filters out the rest
       await bot.removeMessageReaction(args.channelId, args.messageId, args.emoji.replace(">", ""), bot.user.id);
     } catch (e) {
-      msg.channel.createMessage(`⚠️ Unable to remove reaction: \`${e}\``);
+      msg.channel.createMessage({ content: `⚠️ Unable to remove reaction: \`${e}\``, messageReferenceID: msg.id });
     }
 
     reactions.splice(reactions.indexOf({ ...args }), 1);
     saveReactions();
-    msg.channel.createMessage("Successfully removed reaction from message and de-registered it internally.");
+    msg.channel.createMessage({
+      content: "Successfully removed reaction from message and de-registered it internally.",
+      messageReferenceID: msg.id,
+    });
   };
 
   /**
@@ -148,24 +159,31 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     if (!isOwner(msg)) return;
     reaction = isValidReaction(args.channelId, args.messageId, args.emoji);
     if (reaction == null) {
-      msg.channel.createMessage(`⚠️ Unable to add reaction response: That reaction doesn't exist on that message!`);
+      msg.channel.createMessage({
+        content: `⚠️ Unable to add reaction response: That reaction doesn't exist on that message!`,
+        messageReferenceID: msg.id,
+      });
       return;
     }
 
     if (args.response) {
       const response = emptyResponse.includes(args.response.trim()) ? null : args.response.trim();
       if (response.length > 1500) {
-        msg.channel.createMessage("⚠️ That custom response is too long!");
+        msg.channel.createMessage({ content: "⚠️ That custom response is too long!", messageReferenceID: msg.id });
         return;
       }
 
       reaction.response = response;
       saveReactions();
-      msg.channel.createMessage("Successfully created/updated reaction response and registered it internally.");
+      msg.channel.createMessage({
+        content: "Successfully created/updated reaction response and registered it internally.",
+        messageReferenceID: msg.id,
+      });
     } else {
-      msg.channel.createMessage(
-        `The current response for that reaction is: \`${reaction.response ? reaction.response : "None"}\``,
-      );
+      msg.channel.createMessage({
+        content: `The current response for that reaction is: \`${reaction.response ? reaction.response : "None"}\``,
+        messageReferenceID: msg.id,
+      });
     }
   };
 
@@ -190,7 +208,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       toPost += reactionText;
     }
 
-    msg.channel.createMessage(toPost);
+    msg.channel.createMessage({ content: toPost, messageReferenceID: msg.id });
   };
 
   /**
@@ -253,7 +271,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     clearTimeout(refreshTimeout);
     if (msg) {
       if (!isOwner(msg)) return;
-      msg = await msg.channel.createMessage(`Refreshing all reactions...`);
+      msg = await msg.channel.createMessage({ content: `Refreshing all reactions...`, messageReferenceID: msg.id });
     }
 
     for (const react of reactions) {
@@ -261,10 +279,15 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       const emoji = react.emoji.replace(">", "");
 
       await bot.removeMessageReaction(react.channelId, react.messageId, emoji, bot.user.id).catch(() => {});
-      await bot.addMessageReaction(react.channelId, react.messageId, emoji).catch(e => {
-        console.warn(`[ReactionThreads] Error applying reaction ${react.emoji} to message ${react.channelId}-${react.messageId}: ${e}\nIf you deleted the message, use rtRemove ASAP`);
+      await bot.addMessageReaction(react.channelId, react.messageId, emoji).catch((e) => {
+        console.warn(
+          `[ReactionThreads] Error applying reaction ${react.emoji} to message ${react.channelId}-${react.messageId}: ${e}\nIf you deleted the message, use rtRemove ASAP`,
+        );
         if (msg) {
-          msg.channel.createMessage(`Error applying reaction ${react.emoji} to message ${react.messageId} in <#${react.channelId}>: ${e}\nIf you deleted the message, use \`rtRemove ${react.channelId} ${react.messageId} ${react.emoji}\``);
+          msg.channel.createMessage({
+            content: `Error applying reaction ${react.emoji} to message ${react.messageId} in <#${react.channelId}>: ${e}\nIf you deleted the message, use \`rtRemove ${react.channelId} ${react.messageId} ${react.emoji}\``,
+            messageReferenceID: msg.id,
+          });
         }
       });
     }
@@ -274,8 +297,8 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
     }
     refreshTimeout = setTimeout(() => {
       refreshReactions();
-    }, 1000 * 60 * 30); //Refresh reactions every 30 minutes 
-  }
+    }, 1000 * 60 * 30); //Refresh reactions every 30 minutes
+  };
 
   refreshReactions();
   //#endregion
