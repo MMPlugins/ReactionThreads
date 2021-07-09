@@ -278,7 +278,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
       if (react.channelId === "version") continue;
       const emoji = react.emoji.replace(">", "");
 
-      await bot.removeMessageReaction(react.channelId, react.messageId, emoji, bot.user.id).catch(() => {});
+      await bot.removeMessageReactionEmoji(react.channelId, react.messageId, emoji).catch(() => {});
       await bot.addMessageReaction(react.channelId, react.messageId, emoji).catch((e) => {
         console.warn(
           `[ReactionThreads] Error applying reaction ${react.emoji} to message ${react.channelId}-${react.messageId}: ${e}\nIf you deleted the message, use rtRemove ASAP`,
