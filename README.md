@@ -2,6 +2,7 @@
 **Currently on Version 1.3**  
 A full [changelog can be found here](https://github.com/MMPlugins/ReactionThreads/blob/main/CHANGELOG.md).  
 Plugin written and maintained by [DarkView](https://github.com/DarkView) (Dark#1010 on Discord)  
+With Contributions by [YetAnotherConnor](https://github.com/YetAnotherConnor)  
   
 Table of Contents:
 - [Setup](#setup)
@@ -32,7 +33,9 @@ You need to restart the bot in order for the plugin to be loaded!
 ## Usage
 ### General
 In order for the bot to create threads through user reactions, you need to set up reactions first. See the Commands section below for information on how to do so.  
-Registered reactions are persistent between restarts, as long as you do not delete or move the `ReactionThreadsData.json` file created by the plugin.
+Registered reactions are persistent between restarts, as long as you do not delete or move the `ReactionThreadsData.json` file created by the plugin.  
+  
+In case you are looking for a reaction menu that is in DM's with the messaging user, check out the [ReactionThreadsMenu Plugin](https://github.com/YetAnotherConnor/ReactionThreadsMenu) which extends this plugin! 
 ### Restrictions
 The plugin is rather lenient regarding allowed reactions. As long as the bot is able to use the emoji, you are able to register it as a reaction.
   
