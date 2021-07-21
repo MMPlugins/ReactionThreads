@@ -21,7 +21,7 @@
     "url": "https://github.com/MMPlugins/ReactionThreads/issues"
   },
   "devDependencies": {
-    "eslint": "^7.12.1",
-    "prettier": "^2.2.1"
+    "eslint": "^7.31.0",
+    "prettier": "^2.3.2"
   }
 }
