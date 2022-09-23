@@ -7,7 +7,7 @@ module.exports = function ({ bot, config, commands, knex, threads }) {
   let refreshTimeout = null;
 
   // Check if ownerId is specified in the config, warn otherwise
-  const ownerId = config["reactionThreads-ownerId"];
+  const ownerId = config["reactionThreads-ownerId"] ??= config["reactionThreadsOwnerId"];
   if (typeof ownerId === "undefined") {
     console.info(
       '[ReactionThreads] No ownerId specified in config via "reactionThreads-ownerId", everyone (with inboxServerPermission) will be able to add new reactions!',
