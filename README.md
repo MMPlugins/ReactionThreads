@@ -23,7 +23,7 @@ Make sure you are running at least v3.3.0 of Modmail.
 in your config.ini file, create a new line and add  
 ```
 plugins[] = npm:MMPlugins/ReactionThreads
-reactionThreads-ownerId = <yourUserId or adminRoleId>
+reactionThreads-ownerId = <yourUserId or adminRoleId> (`MM_REACTION_THREADS_OWNER_ID` for .env files)
 extraIntents[] = guildMessageReactions
 ```
 to your config and replace `<yourUserId>` with your user ID. Only the person with this ID is allowed to add/remove reactions.  
